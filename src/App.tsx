@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
 import { AppDataProvider } from './context/AppDataContext';
@@ -17,7 +17,7 @@ export function App() {
     <ThemeProvider>
       <ToastProvider>
         <AppDataProvider>
-          <BrowserRouter>
+          <HashRouter>
             <div className="min-h-screen flex flex-col bg-[#F8FAFC] dark:bg-[#090D16] text-[#0F172A] dark:text-slate-100 transition-colors">
               {/* Header */}
               <Header />
@@ -41,7 +41,7 @@ export function App() {
               {/* Mobile Bottom Navigation */}
               <BottomNav />
             </div>
-          </BrowserRouter>
+          </HashRouter>
         </AppDataProvider>
       </ToastProvider>
     </ThemeProvider>
