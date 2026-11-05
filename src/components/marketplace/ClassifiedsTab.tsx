@@ -15,8 +15,12 @@ import {
   XCircle,
   UserCheck,
   RotateCcw,
+  ShieldAlert,
+  Trash2,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAppData } from '../../context/AppDataContext';
+import { useAuth } from '../../context/AuthContext';
 import { CreateListingModal } from './CreateListingModal';
 import { EditListingModal } from './EditListingModal';
 import { ContactSellerModal } from './ContactSellerModal';
@@ -26,7 +30,9 @@ type SortOption = 'newest' | 'price_asc' | 'price_desc' | 'title_asc';
 type PricePreset = 'all' | 'under_500' | '500_1500' | '1500_3000' | 'above_3000' | 'custom';
 
 export const ClassifiedsTab: React.FC = () => {
-  const { classifieds, toggleClassifiedStatus } = useAppData();
+  const { classifieds, toggleClassifiedStatus, moderateRemoveClassified, moderateToggleListingStatus } = useAppData();
+  const { currentUser } = useAuth();
+  const isStaff = currentUser?.role === 'staff';
   
   // UI State
   const [viewScope, setViewScope] = useState<'all' | 'my_listings'>('all');
@@ -110,6 +116,28 @@ export const ClassifiedsTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* STAFF ONLY: Marketplace Moderation Toolbar */}
+      {isStaff && (
+        <div className="p-4 rounded-2xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800 flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[#4F46F5] text-white flex items-center justify-center font-bold">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-extrabold text-indigo-900 dark:text-indigo-200">
+                Staff Moderation Mode Active
+              </span>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                You can review, flag, toggle sold state, or delete any listing across all campus categories.
+              </p>
+            </div>
+          </div>
+          <span className="px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 font-bold text-[10px]">
+            {classifieds.length} Active Posts
+          </span>
+        </div>
+      )}
+
       {/* Scope Bar: All Items vs My Listed Products */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
         <div className="flex items-center gap-2">
@@ -465,6 +493,35 @@ export const ClassifiedsTab: React.FC = () => {
                     </button>
                   )}
                 </div>
+
+                {/* STAFF MODERATION CONTROLS (Hidden from Students) */}
+                {isStaff && (
+                  <div className="p-3 pt-0 border-t border-indigo-100 dark:border-indigo-950/80 bg-indigo-50/50 dark:bg-indigo-950/20">
+                    <div className="flex items-center justify-between mb-1.5 pt-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-[#4F46F5] dark:text-indigo-400 flex items-center gap-1">
+                        <ShieldCheck className="w-3 h-3" /> Moderator Control
+                      </span>
+                      <span className="text-[10px] text-slate-400">ID: {item.id}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => moderateToggleListingStatus(item.id)}
+                        className="py-1.5 px-2 text-[10px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all text-center"
+                      >
+                        {item.status === 'available' ? 'Mark Sold' : 'Set Available'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moderateRemoveClassified(item.id)}
+                        className="py-1.5 px-2 text-[10px] font-bold rounded-lg border border-rose-200 dark:border-rose-900 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 transition-all flex items-center justify-center gap-1"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Remove Post</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

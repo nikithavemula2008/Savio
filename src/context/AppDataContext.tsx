@@ -11,6 +11,8 @@ import {
   RideHistory,
   NotificationItem,
   MessMeal,
+  MessItem,
+  MachineStatus,
 } from '../types';
 import { initialMachines, initialBookings } from '../data/mockLaundry';
 import { initialAcademicResources, initialTutors, initialClassifieds } from '../data/mockMarketplace';
@@ -46,6 +48,15 @@ interface AppDataContextType {
   rateMessMeal: (mealId: string, rating: number) => void;
   simulateBoardBus: (busId: string) => void;
   resetAllDemoData: () => void;
+  // Staff Controls
+  updateMessMeal: (mealId: string, updated: Partial<MessMeal>) => void;
+  addMessItem: (mealId: string, item: MessItem) => void;
+  removeMessItem: (mealId: string, itemIndex: number) => void;
+  updateMachineStatus: (machineId: string, status: MachineStatus, remainingMinutes?: number) => void;
+  updateBusStatus: (busId: string, updates: Partial<TransitBus>) => void;
+  postTransitAlert: (title: string, message: string) => void;
+  moderateRemoveClassified: (id: string) => void;
+  moderateToggleListingStatus: (id: string) => void;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -76,7 +87,10 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return saved ? JSON.parse(saved) : initialClassifieds;
   });
 
-  const [buses] = useState<TransitBus[]>(initialBuses);
+  const [buses, setBuses] = useState<TransitBus[]>(() => {
+    const saved = localStorage.getItem('savio_buses');
+    return saved ? JSON.parse(saved) : initialBuses;
+  });
 
   const [profile, setProfile] = useState<StudentProfile>(() => {
     const saved = localStorage.getItem('savio_profile');
@@ -114,6 +128,10 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     localStorage.setItem('savio_classifieds', JSON.stringify(classifieds));
   }, [classifieds]);
+
+  useEffect(() => {
+    localStorage.setItem('savio_buses', JSON.stringify(buses));
+  }, [buses]);
 
   useEffect(() => {
     localStorage.setItem('savio_profile', JSON.stringify(profile));
@@ -421,12 +439,94 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     showToast(`Boarded ${bus.busNumber}! +15 Rider Points earned!`, 'success');
   };
 
+  // STAFF CONTROLS (Only visible & executable by Staff accounts)
+  const updateMessMeal = (mealId: string, updated: Partial<MessMeal>) => {
+    setMessSchedule(prev =>
+      prev.map(m => (m.id === mealId ? { ...m, ...updated } : m))
+    );
+    showToast('Mess menu updated successfully!', 'success');
+  };
+
+  const addMessItem = (mealId: string, item: MessItem) => {
+    setMessSchedule(prev =>
+      prev.map(m =>
+        m.id === mealId ? { ...m, items: [...m.items, item] } : m
+      )
+    );
+    showToast(`Added "${item.name}" to mess menu!`, 'success');
+  };
+
+  const removeMessItem = (mealId: string, itemIndex: number) => {
+    setMessSchedule(prev =>
+      prev.map(m =>
+        m.id === mealId
+          ? { ...m, items: m.items.filter((_, idx) => idx !== itemIndex) }
+          : m
+      )
+    );
+    showToast('Dish removed from mess menu.', 'info');
+  };
+
+  const updateMachineStatus = (machineId: string, status: MachineStatus, remainingMinutes?: number) => {
+    setMachines(prev =>
+      prev.map(m =>
+        m.id === machineId
+          ? {
+              ...m,
+              status,
+              remainingMinutes: status === 'free' ? undefined : (remainingMinutes !== undefined ? remainingMinutes : m.remainingMinutes),
+            }
+          : m
+      )
+    );
+    showToast(`Machine ${machineId} set to "${status.replace('_', ' ').toUpperCase()}".`, 'success');
+  };
+
+  const updateBusStatus = (busId: string, updates: Partial<TransitBus>) => {
+    setBuses(prev =>
+      prev.map(b => (b.id === busId ? { ...b, ...updates } : b))
+    );
+    showToast(`Shuttle status updated by operations staff.`, 'success');
+  };
+
+  const postTransitAlert = (title: string, message: string) => {
+    const alertNotif: NotificationItem = {
+      id: `NOTIF-STAFF-${Date.now()}`,
+      title,
+      message,
+      time: 'Just now',
+      read: false,
+      type: 'transit',
+    };
+    setNotifications(prev => [alertNotif, ...prev]);
+    showToast('Transit announcement broadcast to campus!', 'success');
+  };
+
+  const moderateRemoveClassified = (id: string) => {
+    setClassifieds(prev => prev.filter(c => c.id !== id));
+    showToast('Listing removed by campus moderator.', 'info');
+  };
+
+  const moderateToggleListingStatus = (id: string) => {
+    setClassifieds(prev =>
+      prev.map(c => {
+        if (c.id === id) {
+          const next = c.status === 'available' ? 'sold' : 'available';
+          showToast(`Listing status changed to "${next}" by staff.`, 'info');
+          return { ...c, status: next };
+        }
+        return c;
+      })
+    );
+  };
+
   const resetAllDemoData = () => {
     localStorage.clear();
     setMachines(initialMachines);
     setBookings(initialBookings);
     setResources(initialAcademicResources);
     setClassifieds(initialClassifieds);
+    setBuses(initialBuses);
     setProfile(initialProfile);
     setRideHistory(initialRideHistory);
     setNotifications(initialNotifications);
@@ -463,6 +563,14 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         rateMessMeal,
         simulateBoardBus,
         resetAllDemoData,
+        updateMessMeal,
+        addMessItem,
+        removeMessItem,
+        updateMachineStatus,
+        updateBusStatus,
+        postTransitAlert,
+        moderateRemoveClassified,
+        moderateToggleListingStatus,
       }}
     >
       {children}

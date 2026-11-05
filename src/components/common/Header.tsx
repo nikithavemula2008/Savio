@@ -10,17 +10,26 @@ import {
   Sparkles,
   Layers,
   ChevronDown,
+  LogOut,
+  ShieldAlert,
+  User,
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAppData } from '../../context/AppDataContext';
+import { useAuth } from '../../context/AuthContext';
 
 export const Header: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const { profile, notifications, markNotificationRead, markAllNotificationsRead } = useAppData();
+  const { currentUser, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const location = useLocation();
 
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  const isStaff = currentUser?.role === 'staff';
+  const displayName = currentUser?.name || profile.name;
+  const displayAvatar = currentUser?.avatarUrl || profile.avatarUrl;
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -63,35 +72,60 @@ export const Header: React.FC = () => {
               </span>
               <div className="flex items-center gap-1.5">
                 <span className="text-sm font-bold text-slate-900 dark:text-white">
-                  {profile.name}
+                  {displayName}
                 </span>
-                <span className="inline-flex items-center text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800/40">
-                  <ShieldCheck className="w-3 h-3 mr-0.5" /> Verified Student
-                </span>
+                {isStaff ? (
+                  <span className="inline-flex items-center text-[11px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/70 px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800/60">
+                    <ShieldCheck className="w-3 h-3 mr-0.5 text-[#4F46F5]" /> Staff / Faculty
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800/40">
+                    <ShieldCheck className="w-3 h-3 mr-0.5" /> Verified Student
+                  </span>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Right Controls: Points, Theme, Notifications, Avatar */}
+          {/* Right Controls: Points/Role, Theme, Notifications, Avatar, Logout */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Savio Points pill */}
-            <Link
-              to="/profile"
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-50 to-emerald-50 dark:from-indigo-950/40 dark:to-emerald-950/40 border border-indigo-200/80 dark:border-indigo-800/50 hover:border-indigo-400 dark:hover:border-indigo-600 transition-all group"
-              title="Your Savio Reward Points"
-            >
-              <div className="w-6 h-6 rounded-lg bg-[#4F46F5] text-white flex items-center justify-center text-xs font-bold shadow-sm group-hover:scale-110 transition-transform">
-                <Sparkles className="w-3.5 h-3.5" />
+            {/* Savio Points pill (for student) or Staff Badge (for staff) */}
+            {isStaff ? (
+              <div
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/50"
+                title="Logged in with Campus Staff Privileges"
+              >
+                <div className="w-6 h-6 rounded-lg bg-[#4F46F5] text-white flex items-center justify-center text-xs font-bold shadow-sm">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-extrabold text-slate-900 dark:text-white leading-none">
+                    Operations
+                  </span>
+                  <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">
+                    Staff Portal
+                  </span>
+                </div>
               </div>
-              <div className="flex flex-col text-left">
-                <span className="text-xs font-extrabold text-slate-900 dark:text-white leading-none">
-                  {profile.savioPoints}
-                </span>
-                <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
-                  Savio Pts
-                </span>
-              </div>
-            </Link>
+            ) : (
+              <Link
+                to="/profile"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-50 to-emerald-50 dark:from-indigo-950/40 dark:to-emerald-950/40 border border-indigo-200/80 dark:border-indigo-800/50 hover:border-indigo-400 dark:hover:border-indigo-600 transition-all group"
+                title="Your Savio Reward Points"
+              >
+                <div className="w-6 h-6 rounded-lg bg-[#4F46F5] text-white flex items-center justify-center text-xs font-bold shadow-sm group-hover:scale-110 transition-transform">
+                  <Sparkles className="w-3.5 h-3.5" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-extrabold text-slate-900 dark:text-white leading-none">
+                    {profile.savioPoints}
+                  </span>
+                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                    Savio Pts
+                  </span>
+                </div>
+              </Link>
+            )}
 
             {/* Theme Toggle */}
             <button
@@ -189,17 +223,32 @@ export const Header: React.FC = () => {
             <Link
               to="/profile"
               className="flex items-center gap-2 pl-1 group"
-              title="View Student Profile & Trust"
+              title={isStaff ? 'View Staff Account' : 'View Student Profile & Trust'}
             >
               <div className="relative">
                 <img
-                  src={profile.avatarUrl}
-                  alt={profile.name}
+                  src={displayAvatar}
+                  alt={displayName}
                   className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-cover ring-2 ring-indigo-500/30 group-hover:ring-indigo-600 transition-all shadow-sm"
                 />
-                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full" />
+                <span
+                  className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 border-2 border-white dark:border-slate-900 rounded-full ${
+                    isStaff ? 'bg-indigo-500' : 'bg-emerald-500'
+                  }`}
+                />
               </div>
             </Link>
+
+            {/* Logout Button */}
+            <button
+              type="button"
+              onClick={logout}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 bg-slate-50 dark:bg-slate-900 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-slate-200 dark:border-slate-800 hover:border-rose-300 dark:hover:border-rose-800/60 transition-all shadow-sm"
+              title="Log out of SAVIO session"
+            >
+              <LogOut className="w-4 h-4 text-rose-500" />
+              <span className="hidden sm:inline">Logout</span>
+            </button>
           </div>
         </div>
       </div>

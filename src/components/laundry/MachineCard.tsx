@@ -1,7 +1,9 @@
 import React from 'react';
-import { Clock, QrCode, Sparkles, MapPin, Gauge } from 'lucide-react';
+import { Clock, QrCode, Sparkles, MapPin, Gauge, ShieldCheck } from 'lucide-react';
 import { LaundryMachine } from '../../types';
 import { StatusBadge } from '../common/Badge';
+import { useAuth } from '../../context/AuthContext';
+import { useAppData } from '../../context/AppDataContext';
 
 interface MachineCardProps {
   machine: LaundryMachine;
@@ -14,6 +16,10 @@ export const MachineCard: React.FC<MachineCardProps> = ({
   onSelect,
   onScanQR,
 }) => {
+  const { currentUser } = useAuth();
+  const { updateMachineStatus } = useAppData();
+  const isStaff = currentUser?.role === 'staff';
+
   const isFree = machine.status === 'free';
   const isInUse = machine.status === 'in_use';
   const isComplete = machine.status === 'cycle_complete';
@@ -163,6 +169,55 @@ export const MachineCard: React.FC<MachineCardProps> = ({
           <QrCode className="w-4 h-4" />
         </button>
       </div>
+
+      {/* STAFF ONLY: Machine Status Override Controls */}
+      {isStaff && (
+        <div className="mt-3 pt-3 border-t border-indigo-100 dark:border-indigo-950/80 bg-indigo-50/60 dark:bg-indigo-950/30 -mx-5 -mb-5 p-3 rounded-b-2xl">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-black uppercase tracking-wider text-[#4F46F5] dark:text-indigo-400 flex items-center gap-1">
+              <ShieldCheck className="w-3 h-3" /> Staff Override
+            </span>
+            <span className="text-[10px] font-semibold text-slate-500">
+              {isInUse ? `${machine.remainingMinutes}m left` : isFree ? 'Available' : 'Finished'}
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-1">
+            <button
+              type="button"
+              onClick={() => updateMachineStatus(machine.id, 'free')}
+              className={`py-1 text-[10px] font-bold rounded-lg border transition-all ${
+                isFree
+                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-emerald-50'
+              }`}
+            >
+              Set Free
+            </button>
+            <button
+              type="button"
+              onClick={() => updateMachineStatus(machine.id, 'in_use', 45)}
+              className={`py-1 text-[10px] font-bold rounded-lg border transition-all ${
+                isInUse
+                  ? 'bg-amber-600 text-white border-amber-600 shadow-sm'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-amber-50'
+              }`}
+            >
+              In Use (45m)
+            </button>
+            <button
+              type="button"
+              onClick={() => updateMachineStatus(machine.id, 'cycle_complete')}
+              className={`py-1 text-[10px] font-bold rounded-lg border transition-all ${
+                isComplete
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-blue-50'
+              }`}
+            >
+              Complete
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

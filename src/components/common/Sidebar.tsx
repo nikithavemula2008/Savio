@@ -11,11 +11,15 @@ import {
   RotateCcw,
   Clock,
   Compass,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAppData } from '../../context/AppDataContext';
+import { useAuth } from '../../context/AuthContext';
 
 export const Sidebar: React.FC = () => {
   const { machines, buses, resetAllDemoData } = useAppData();
+  const { currentUser } = useAuth();
+  const isStaff = currentUser?.role === 'staff';
 
   const freeMachinesCount = machines.filter(m => m.status === 'free').length;
   const closestBus = buses.reduce((prev, curr) =>
@@ -33,25 +37,25 @@ export const Sidebar: React.FC = () => {
       to: '/laundry',
       label: 'Smart Laundry',
       icon: Shirt,
-      badge: `${freeMachinesCount} Free`,
+      badge: isStaff ? 'Manage' : `${freeMachinesCount} Free`,
     },
     {
       to: '/marketplace',
       label: 'Marketplace',
       icon: ShoppingBag,
-      badge: 'P2P',
+      badge: isStaff ? 'Moderate' : 'P2P',
     },
     {
       to: '/transit',
       label: 'Campus Transit',
       icon: Bus,
-      badge: `${closestBus.etaMinutes}m ETA`,
+      badge: isStaff ? 'Dispatch' : `${closestBus.etaMinutes}m ETA`,
     },
     {
       to: '/profile',
-      label: 'Profile & Trust',
-      icon: UserCheck,
-      badge: 'Verified',
+      label: isStaff ? 'Staff Account' : 'Profile & Trust',
+      icon: isStaff ? ShieldCheck : UserCheck,
+      badge: isStaff ? 'Staff' : 'Verified',
     },
   ];
 

@@ -1,10 +1,13 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Shirt, ShoppingBag, Bus, UserCheck } from 'lucide-react';
+import { LayoutDashboard, Shirt, ShoppingBag, Bus, UserCheck, ShieldCheck } from 'lucide-react';
 import { useAppData } from '../../context/AppDataContext';
+import { useAuth } from '../../context/AuthContext';
 
 export const BottomNav: React.FC = () => {
   const { machines, buses } = useAppData();
+  const { currentUser } = useAuth();
+  const isStaff = currentUser?.role === 'staff';
   const freeMachinesCount = machines.filter(m => m.status === 'free').length;
 
   const tabs = [
@@ -12,7 +15,7 @@ export const BottomNav: React.FC = () => {
     { to: '/laundry', label: 'Laundry', icon: Shirt, badge: freeMachinesCount > 0 ? freeMachinesCount : undefined },
     { to: '/marketplace', label: 'Market', icon: ShoppingBag },
     { to: '/transit', label: 'Transit', icon: Bus },
-    { to: '/profile', label: 'Profile', icon: UserCheck },
+    { to: '/profile', label: isStaff ? 'Staff' : 'Profile', icon: isStaff ? ShieldCheck : UserCheck },
   ];
 
   return (

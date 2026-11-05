@@ -9,8 +9,11 @@ import {
   CheckCircle2,
   Clock,
   Layers,
+  ShieldCheck,
+  RotateCcw,
 } from 'lucide-react';
 import { useAppData } from '../context/AppDataContext';
+import { useAuth } from '../context/AuthContext';
 import { MachineCard } from '../components/laundry/MachineCard';
 import { ReservationModal } from '../components/laundry/ReservationModal';
 import { MyBookingsList } from '../components/laundry/MyBookingsList';
@@ -18,7 +21,10 @@ import { QRScannerModal } from '../components/common/QRScannerModal';
 import { LaundryMachine } from '../types';
 
 export const LaundryPage: React.FC = () => {
-  const { machines, bookings } = useAppData();
+  const { machines, bookings, updateMachineStatus } = useAppData();
+  const { currentUser } = useAuth();
+  const isStaff = currentUser?.role === 'staff';
+
   const [activeTab, setActiveTab] = useState<'washers' | 'dryers' | 'bookings'>('washers');
   const [statusFilter, setStatusFilter] = useState<'all' | 'free' | 'in_use' | 'cycle_complete'>('all');
   const [selectedMachine, setSelectedMachine] = useState<LaundryMachine | null>(null);
@@ -65,6 +71,37 @@ export const LaundryPage: React.FC = () => {
           <span>Scan Machine QR</span>
         </button>
       </div>
+
+      {/* STAFF ONLY: Facility Overview Banner */}
+      {isStaff && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#4F46F5] text-white flex items-center justify-center font-bold shrink-0">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-xs font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-200">
+                Staff Facilities Controller • Laundry Asset Monitoring
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-300">
+                You have administrative privilege to override machine states, clear cycle queues, and manage floor capacity.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <button
+              type="button"
+              onClick={() => {
+                machines.forEach(m => updateMachineStatus(m.id, 'free'));
+              }}
+              className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-all shadow-sm flex items-center gap-1.5"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Mark All Free</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Tabs Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">

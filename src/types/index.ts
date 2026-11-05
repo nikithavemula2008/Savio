@@ -1,3 +1,26 @@
+export type UserRole = 'student' | 'staff';
+
+export interface AuthUser {
+  id: string;
+  username: string;
+  studentId?: string;
+  staffId?: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  passwordHash?: string;
+  plainPasswordHint?: string;
+  department: string;
+  academicYear?: string;
+  designation?: string;
+  hostelBlock?: string;
+  roomNumber?: string;
+  avatarUrl: string;
+  savioPoints?: number;
+  permissions?: string[];
+  bio?: string;
+}
+
 export type MachineStatus = 'free' | 'in_use' | 'cycle_complete';
 export type MachineType = 'washer' | 'dryer';
 
